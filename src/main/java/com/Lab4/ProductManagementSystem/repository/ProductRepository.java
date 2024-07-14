@@ -13,5 +13,10 @@ import java.util.List;
     @Repository
     public interface ProductRepository extends JpaRepository<Product, Long> {
         List<Product> findByCategory(Category category);
+        @Query("SELECT p.name FROM Product p WHERE p.id = :id")
+        String findNameById(@Param("id") Long id);
+
+        @Query("SELECT p.price FROM Product p WHERE p.id = :id")
+        Double findPriceById(@Param("id") Long id);
     }
 

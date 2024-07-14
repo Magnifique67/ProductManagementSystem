@@ -6,6 +6,7 @@ import com.Lab4.ProductManagementSystem.service.ProductTreeService;
 import com.Lab4.ProductManagementSystem.util.BinaryTree;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,18 +33,10 @@ public class ProductTreeController {
         boolean contains = productTreeService.containsProduct(categoryId, product);
         return ResponseEntity.ok(contains);
     }
-
-    @PostMapping("/add")
+    @PostMapping(value = "/add", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> addProductToTree(@RequestBody Product product) {
-        LOGGER.info("Received request to add product: " + product);
-        try {
-            productTreeService.addProductToTree(product);
-            LOGGER.info("Product added successfully: " + product);
-            return ResponseEntity.status(HttpStatus.CREATED).body("Product added successfully.");
-        } catch (RuntimeException e) {
-            LOGGER.severe("Error adding product: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
+        productTreeService.addProductToTree(product);
+        return ResponseEntity.ok("Product added successfully");
     }
 
     @DeleteMapping("/delete/{categoryId}/{productId}")

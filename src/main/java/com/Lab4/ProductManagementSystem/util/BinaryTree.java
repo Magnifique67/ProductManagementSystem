@@ -4,12 +4,23 @@ import com.Lab4.ProductManagementSystem.entity.Product;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class BinaryTree<T extends Comparable<T>> {
 
-    public Node<T> root;
+    private Node<T> root;
 
-    public BinaryTree() {
-        this.root = null;
+    private static class Node<T> {
+        private T data;
+        private Node<T> left;
+        private Node<T> right;
+
+        public Node(T data) {
+            this.data = data;
+            this.left = null;
+            this.right = null;
+        }
     }
 
     public void add(T value) {
@@ -21,7 +32,7 @@ public class BinaryTree<T extends Comparable<T>> {
             return new Node<>(value);
         }
 
-        int cmp = value.compareTo(current.value);
+        int cmp = value.compareTo(current.data);
         if (cmp < 0) {
             current.left = addRecursive(current.left, value);
         } else if (cmp > 0) {
@@ -40,13 +51,27 @@ public class BinaryTree<T extends Comparable<T>> {
             return false;
         }
 
-        int cmp = value.compareTo(current.value);
+        int cmp = value.compareTo(current.data);
         if (cmp == 0) {
             return true;
         }
         return cmp < 0
                 ? containsNodeRecursive(current.left, value)
                 : containsNodeRecursive(current.right, value);
+    }
+
+    public List<Long> toListOfIds() {
+        List<Long> ids = new ArrayList<>();
+        traverseInOrder(root, ids);
+        return ids;
+    }
+
+    private void traverseInOrder(Node<T> node, List<Long> ids) {
+        if (node != null) {
+            traverseInOrder(node.left, ids);
+            ids.add(((Product) node.data).getId()); // Assuming Product has a getId() method returning Long
+            traverseInOrder(node.right, ids);
+        }
     }
 
     public boolean delete(T value) {
@@ -57,13 +82,12 @@ public class BinaryTree<T extends Comparable<T>> {
         return false;
     }
 
-
     private Node<T> deleteRecursive(Node<T> current, T value) {
         if (current == null) {
             return null;
         }
 
-        int cmp = value.compareTo(current.value);
+        int cmp = value.compareTo(current.data);
         if (cmp < 0) {
             current.left = deleteRecursive(current.left, value);
         } else if (cmp > 0) {
@@ -79,7 +103,7 @@ public class BinaryTree<T extends Comparable<T>> {
             } else {
                 // Node with two children
                 T smallestValue = findSmallestValue(current.right);
-                current.value = smallestValue;
+                current.data = smallestValue;
                 current.right = deleteRecursive(current.right, smallestValue);
             }
         }
@@ -87,18 +111,7 @@ public class BinaryTree<T extends Comparable<T>> {
     }
 
     private T findSmallestValue(Node<T> root) {
-        return root.left == null ? root.value : findSmallestValue(root.left);
-    }
-
-    public static class Node<T> {
-        T value;
-        public Node<T> left;
-        public Node<T> right;
-
-        Node(T value) {
-            this.value = value;
-            left = right = null;
-        }
+        return root.left == null ? root.data : findSmallestValue(root.left);
     }
 
     public String toJson() {

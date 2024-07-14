@@ -1,21 +1,27 @@
 package com.Lab4.ProductManagementSystem.service;
 
 import com.Lab4.ProductManagementSystem.dto.CategoryWithProductsDTO;
+import com.Lab4.ProductManagementSystem.dto.ProductDTO;
 import com.Lab4.ProductManagementSystem.entity.Category;
 import com.Lab4.ProductManagementSystem.entity.Product;
+import com.Lab4.ProductManagementSystem.entity.CategoryTree;
 import com.Lab4.ProductManagementSystem.repository.CategoryRepository;
 import com.Lab4.ProductManagementSystem.repository.ProductRepository;
+import com.Lab4.ProductManagementSystem.repository.CategoryTreeRepository;
 import com.Lab4.ProductManagementSystem.util.BinaryTree;
+import com.Lab4.ProductManagementSystem.util.HelperFunctions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.PostConstruct;
+import javax.persistence.EntityNotFoundException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 @Service
 public class ProductTreeService {
@@ -27,6 +33,10 @@ public class ProductTreeService {
 
     @Autowired
     private CategoryRepository categoryRepository;
+    @Autowired
+    private HelperFunctions helperFunctions;
+    @Autowired
+    private CategoryTreeRepository categoryTreeRepository; // Inject the MongoDB repository for CategoryTree
 
     private Map<Long, BinaryTree<Product>> categoryTrees = new HashMap<>();
 
@@ -56,9 +66,8 @@ public class ProductTreeService {
         BinaryTree<Product> tree = categoryTrees.computeIfAbsent(product.getCategory().getId(), k -> new BinaryTree<>());
         tree.add(product);
 
-        // Update the categories_tree_json field for the category (if needed)
-        category.setCategoriesTreeJson(tree.toJson());
-        categoryRepository.save(category);
+        // Update the CategoryTree in MongoDB
+        updateCategoryTreeInMongo(product.getCategory().getId(), tree);
 
         LOGGER.info("Added product to tree: " + product);
     }
@@ -70,6 +79,10 @@ public class ProductTreeService {
             boolean deleted = tree.delete(product);
             if (deleted) {
                 productRepository.delete(product);
+
+                // Update the CategoryTree in MongoDB
+                updateCategoryTreeInMongo(categoryId, tree);
+
                 LOGGER.info("Deleted product from tree and repository: " + product);
                 return true;
             } else {
@@ -90,22 +103,47 @@ public class ProductTreeService {
         BinaryTree<Product> tree = categoryTrees.get(categoryId);
         return tree != null && tree.containsNode(product);
     }
-
-    @Transactional
+    @Transactional(readOnly = true)
     public List<CategoryWithProductsDTO> getAllCategoriesWithProducts() {
-        List<CategoryWithProductsDTO> categoryDTOs = new ArrayList<>();
-        try {
-            List<Category> categories = categoryRepository.findAllWithProducts();
-            for (Category category : categories) {
-                CategoryWithProductsDTO dto = new CategoryWithProductsDTO();
-                dto.setId(category.getId());
-                dto.setName(category.getName());
-                dto.setProducts(new ArrayList<>(category.getProducts())); // Ensure products are loaded eagerly
-                categoryDTOs.add(dto);
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Error retrieving categories with products", e);
-        }
-        return categoryDTOs;
+        List<CategoryTree> categoryTrees = categoryTreeRepository.findAll();
+
+        return categoryTrees.stream()
+                .map(categoryTree -> {
+                    // Fetch the category details using categoryId
+                    Long categoryId = categoryTree.getCategoryId();
+                    Category category = categoryRepository.findById(categoryId)
+                            .orElseThrow(() -> new EntityNotFoundException("Category not found with id: " + categoryId));
+
+                    // Map products to ProductDTOs
+                    List<Long> productIds = categoryTree.getProducts();
+                    List<ProductDTO> productDTOs = getProductDTOs(productIds);
+
+                    // Create CategoryWithProductsDTO
+                    return new CategoryWithProductsDTO(category.getId(), category.getName(), productDTOs);
+                })
+                .collect(Collectors.toList());
+    }
+
+    private List<ProductDTO> getProductDTOs(List<Long> productIds) {
+        return productIds.stream()
+                .map(productId -> {
+                    Product product = productRepository.findById(productId)
+                            .orElseThrow(() -> new EntityNotFoundException("Product not found with id: " + productId));
+                    return new ProductDTO(product.getId(), product.getName(), product.getPrice());
+                })
+                .collect(Collectors.toList());
+    }
+
+
+        private void updateCategoryTreeInMongo(Long categoryId, BinaryTree<Product> tree) {
+        CategoryTree categoryTree = categoryTreeRepository.findByCategoryId(categoryId)
+                .orElse(new CategoryTree());
+
+        categoryTree.setCategoryId(categoryId);
+        categoryTree.setProducts(tree.toListOfIds()); // Assuming toListOfIds() converts products to List<Long>
+
+        categoryTreeRepository.save(categoryTree);
     }
 }
+
+
