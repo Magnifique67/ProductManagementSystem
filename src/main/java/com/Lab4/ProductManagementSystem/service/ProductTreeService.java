@@ -9,14 +9,12 @@ import com.Lab4.ProductManagementSystem.repository.CategoryRepository;
 import com.Lab4.ProductManagementSystem.repository.ProductRepository;
 import com.Lab4.ProductManagementSystem.repository.CategoryTreeRepository;
 import com.Lab4.ProductManagementSystem.util.BinaryTree;
-import com.Lab4.ProductManagementSystem.util.HelperFunctions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.PostConstruct;
 import javax.persistence.EntityNotFoundException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,8 +31,6 @@ public class ProductTreeService {
 
     @Autowired
     private CategoryRepository categoryRepository;
-    @Autowired
-    private HelperFunctions helperFunctions;
     @Autowired
     private CategoryTreeRepository categoryTreeRepository; // Inject the MongoDB repository for CategoryTree
 

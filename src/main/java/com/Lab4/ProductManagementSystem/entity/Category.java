@@ -26,9 +26,5 @@ public class Category {
     @JsonIgnoreProperties("category") // Ignore Product's category field to break the serialization cycle
     private Set<Product> products = new HashSet<>();
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_id")
-    private Category parent;
-
     // Constructors, getters, and setters
 }

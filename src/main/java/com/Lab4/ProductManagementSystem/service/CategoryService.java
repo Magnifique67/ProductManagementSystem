@@ -1,5 +1,4 @@
 package com.Lab4.ProductManagementSystem.service;
-
 import com.Lab4.ProductManagementSystem.entity.Category;
 import com.Lab4.ProductManagementSystem.repository.CategoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,20 +12,26 @@ public class CategoryService {
 
     @Autowired
     private CategoryRepository categoryRepository;
-@Transactional
+
+    @Transactional
     public List<Category> getAllCategories() {
         return categoryRepository.findAll();
     }
-@Transactional
+
+    @Transactional
     public Category getCategoryById(Long id) {
         return categoryRepository.findById(id).orElse(null);
     }
-@Transactional
+
+    @Transactional
     public Category saveCategory(Category category) {
         return categoryRepository.save(category);
     }
-@Transactional
+
+    @Transactional
     public void deleteCategory(Long id) {
         categoryRepository.deleteById(id);
     }
+
+
 }
