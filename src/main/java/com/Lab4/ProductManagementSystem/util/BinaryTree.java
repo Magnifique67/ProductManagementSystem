@@ -117,10 +117,12 @@ public class BinaryTree<T extends Comparable<T>> {
     public String toJson() {
         ObjectMapper objectMapper = new ObjectMapper();
         try {
+            System.out.println("Serializing tree: " + root); // Debugging line
             return objectMapper.writeValueAsString(root);
         } catch (JsonProcessingException e) {
             e.printStackTrace();
             return null;
         }
     }
+
 }
